@@ -1,0 +1,57 @@
+/* Fichier: style.css */
+
+body { 
+    font-family: sans-serif; 
+    padding: 20px; 
+    background: #f4f4f4; 
+}
+
+.container { 
+    max-width: 1200px; 
+    margin: 0 auto; 
+    background: white; 
+    padding: 20px; 
+    border-radius: 8px; 
+    box-shadow: 0 0 10px rgba(0,0,0,0.1); 
+}
+
+h1 { 
+    text-align: center; 
+    color: #333; 
+}
+
+h2 { 
+    border-bottom: 2px solid #007bff; 
+    padding-bottom: 10px; 
+    margin-top: 40px; 
+}
+
+.diagram-box { 
+    margin-bottom: 50px; 
+    overflow-x: auto; 
+}
+
+/* Navigation */
+nav { 
+    text-align: center; 
+    margin-bottom: 20px; 
+}
+
+nav a { 
+    margin: 0 10px; 
+    text-decoration: none; 
+    color: #007bff; 
+    font-weight: bold; 
+}
+
+nav a:hover { 
+    text-decoration: underline; 
+}
+
+/* Centrage automatique des diagrammes Mermaid */
+.mermaid {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    margin-bottom: 30px; /* Petit espace sous chaque dessin */
+}

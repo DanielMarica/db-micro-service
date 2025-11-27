@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Architecture Eventify - Schémas DB</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="container">
+    <h1>Eventify - Documentation des Bases de Données</h1>
+    
+    <nav>
+        <a href="#user">User Service</a>
+        <a href="#event">Event Service</a>
+        <a href="#reservation">Reservation Service</a>
+        <a href="#payment">Payment Service</a>
+        <a href="#resale">Revente Service</a>
+        <a href="#notif">Notification Service</a>
+        <a href="#notif">Dashboard Service</a>
+    </nav>
+
+    <h2 id="user">1. User Service (PostgreSQL)</h2>
+    <div class="mermaid" >
+        erDiagram
+    USERS {
+        UUID id PK
+        VARCHAR email UK "Unique"
+        VARCHAR password_hash "Bcrypt"
+        VARCHAR role "USER, ADMIN, ORG"
+        VARCHAR first_name
+        VARCHAR last_name
+        TIMESTAMP created_at
+        BOOLEAN is_active
+    }
+    ADDRESSES {
+        UUID id PK
+        UUID user_id FK
+        VARCHAR street
+        VARCHAR city
+        VARCHAR zip_code
+        VARCHAR country
+    }
+    USERS ||--o{ ADDRESSES : has
+    </div>
+
+    <h2 id="event">2. Event Service (PostgreSQL)</h2>
+    <div class="mermaid">
+        erDiagram
+    VENUES {
+        UUID id PK
+        VARCHAR name
+        INT capacity
+        VARCHAR address
+        JSON map_config "Configuration du plan de salle"
+    }
+    CATEGORIES {
+        UUID id PK
+        VARCHAR name
+        VARCHAR description
+    }
+    EVENTS {
+        UUID id PK
+        UUID venue_id FK
+        UUID category_id FK
+        VARCHAR title
+        TEXT description
+        TIMESTAMP start_date
+        TIMESTAMP end_date
+        VARCHAR status "DRAFT, PUBLISHED, CANCELLED"
+        BOOLEAN is_available
+    }
+    TICKET_TYPES {
+        UUID id PK
+        UUID event_id FK
+        VARCHAR name "VIP, Standard, EarlyBird"
+        DECIMAL price
+        INT quantity_available
+    }
+
+    VENUES ||--o{ EVENTS : hosts
+    CATEGORIES ||--o{ EVENTS : classifies
+    EVENTS ||--o{ TICKET_TYPES : offers
+    </div>
+    <h2 id="reservation">3. Reservation Service (PostgreSQL)</h2>
+    <div  class="mermaid">
+        erDiagram
+    RESERVATIONS {
+        UUID id PK
+        UUID user_id "Référence logique vers User Service"
+        UUID event_id "Référence logique vers Event Service"
+        TIMESTAMP created_at
+        VARCHAR status "PENDING, CONFIRMED, CANCELLED"
+        DECIMAL total_amount
+    }
+    RESERVED_SEATS {
+        UUID id PK
+        UUID reservation_id FK
+        UUID ticket_type_id
+        VARCHAR seat_number "Ex: A12 ou NULL si placement libre"
+    }
+
+    RESERVATIONS ||--|{ RESERVED_SEATS : contains
+    </div>
+
+    <h2 id="payment">4. Payment Service (PostgreSQL)</h2>
+    <div  class="mermaid">
+       erDiagram
+    TRANSACTIONS {
+        UUID id PK
+        UUID reservation_id "Lien vers Reservation"
+        UUID user_id
+        DECIMAL amount
+        VARCHAR currency
+        VARCHAR status "INITIATED, SUCCESS, FAILED, REFUNDED"
+        VARCHAR payment_method "STRIPE, PAYPAL"
+        TIMESTAMP transaction_date
+        VARCHAR provider_transaction_id "ID externe (Stripe)"
+    }
+    INVOICES {
+        UUID id PK
+        UUID transaction_id FK
+        VARCHAR invoice_number UK
+        VARCHAR pdf_url
+        TIMESTAMP generated_at
+    }
+
+    TRANSACTIONS ||--|| INVOICES : generates
+    </div>
+
+    <h2 id="resale">5. Revente Service (PostgreSQL)</h2>
+    <div  class="mermaid">
+        erDiagram
+    RESALE_OFFERS {
+        UUID id PK
+        UUID original_reservation_id
+        UUID seller_user_id
+        DECIMAL price
+        VARCHAR status "OPEN, SOLD, CANCELLED"
+        TIMESTAMP created_at
+    }
+    RESALE_TRANSACTIONS {
+        UUID id PK
+        UUID resale_offer_id FK
+        UUID buyer_user_id
+        TIMESTAMP sold_at
+    }
+    
+    RESALE_OFFERS ||--o| RESALE_TRANSACTIONS : completes
+    </div>
+    
+
+    <h2 id="notif">6. Notification Service (NoSQL - MongoDB) </h2>
+    <div  class="mermaid">
+       erDiagram
+    %% Base de données : MongoDB (NoSQL)
+    
+    NOTIFICATION_LOGS {
+        ObjectId _id PK
+        UUID user_id
+        VARCHAR type "EMAIL, SMS, PUSH"
+        VARCHAR event_type "BILLETTERIE_OUVERTE, PAIEMENT_VALIDE"
+        VARCHAR status "SENT, FAILED, PENDING"
+        TIMESTAMP created_at
+        TEXT content_payload "Contenu JSON du message envoyé"
+    }
+
+    USER_PREFERENCES {
+        ObjectId _id PK
+        UUID user_id UK "Un profil par user"
+        BOOLEAN email_opt_in
+        BOOLEAN sms_opt_in
+        ARRAY interested_categories "['Rock', 'Theatre']"
+        TIMESTAMP updated_at
+    }
+
+    TEMPLATES {
+        ObjectId _id PK
+        VARCHAR template_name "CONFIRMATION_ACHAT"
+        VARCHAR channel "EMAIL"
+        TEXT subject
+        TEXT body_html "Code HTML avec variables {{name}}"
+        VARCHAR version
+    }
+
+    USER_PREFERENCES ||--o{ NOTIFICATION_LOGS : receives
+    </div>
+
+    <h2 id="event">7. Dashboard Service (Analytique - ClickHouse/Elastic) </h2>
+    <div  class="mermaid">
+      erDiagram
+    %% Base de données : Analytique (Ex: ClickHouse)
+    
+    EVENT_STATS_DAILY {
+        UUID event_id PK
+        DATE report_date PK
+        INT views_count
+        INT tickets_sold_count
+        DECIMAL revenue_generated
+        INT remaining_seats
+    }
+
+    SALES_ANALYTICS {
+        UUID transaction_id PK
+        TIMESTAMP sale_time
+        UUID event_id
+        UUID category_id
+        VARCHAR payment_method
+        DECIMAL amount
+        VARCHAR user_region "Pour stats géographiques"
+    }
+
+    SYSTEM_LOGS {
+        UUID id PK
+        TIMESTAMP timestamp
+        VARCHAR service_name "Payment, User, etc."
+        VARCHAR level "INFO, ERROR, WARN"
+        TEXT message
+        INT response_time_ms
+    }
+    </div>
+    </div>
+
+<script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+    mermaid.initialize({ startOnLoad: true, theme: 'default' });
+</script>
+
+</body>
+</html>
