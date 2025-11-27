@@ -27,11 +27,12 @@
         UUID id PK
         VARCHAR email UK "Unique"
         VARCHAR password_hash "Bcrypt"
-        VARCHAR role "USER, ADMIN, ORG"
-        VARCHAR first_name
-        VARCHAR last_name
+        VARCHAR first_name 
+        VARCHAR last_name 
+        VARCHAR phone 
+        DATE birth_date 
         TIMESTAMP created_at
-        BOOLEAN is_active
+        VARCHAR role "USER par défaut"
     }
     ADDRESSES {
         UUID id PK
