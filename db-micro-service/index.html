@@ -168,11 +168,55 @@ TIMESTAMP sold_at
 }
 RESALE_OFFERS ||--o| RESALE_TRANSACTIONS : completes
 </div>
+<h2 id="notif">6. Notification Service (NoSQL - MongoDB)</h2>
+<div class="mermaid">
+erDiagram
+    NOTIFICATIONS {
+        ObjectId _id PK
+        String type "EMAIL, PUSH, SMS"
+        UUID user_id
+        String message
+        String status "SENT, FAILED"
+        Timestamp created_at
+    }
 
-<h2 id="notif">6. Notification Service (NoSQL - MongoDB) </h2>
+    EVENT_INTERESTS {
+        ObjectId _id PK
+        UUID user_id
+        UUID event_id
+        Boolean notified
+        Timestamp created_at
+    }
 
+    EVENT_UPDATES {
+        ObjectId _id PK
+        UUID event_id
+        String update_type "MODIFICATION, CANCELLATION"
+        String description
+        Timestamp created_at
+    }
 
-<h2 id="event">7. Dashboard Service (Analytique - ClickHouse/Elastic) </h2>
+    PROMOTIONAL_CAMPAIGNS {
+        ObjectId _id PK
+        UUID event_id
+        String message
+        Array target_users
+        Timestamp sent_at
+    }
+
+    EVENT_INTERESTS ||--o{ NOTIFICATIONS : triggers
+    EVENT_UPDATES ||--o{ NOTIFICATIONS : generates
+    PROMOTIONAL_CAMPAIGNS ||--o{ NOTIFICATIONS : creates
+</div>
+
+<h2 id="dashboard">7. Dashboard Service (Analytique - ClickHouse/Elastic)</h2>
+<p><strong>Pas de schéma de base de données dédié.</strong></p>
+<p>
+Le Dashboard Service est un service d'<strong>agrégation et de lecture</strong> qui interroge les autres microservices 
+(User, Event, Reservation, Payment) pour calculer et afficher des statistiques en temps réel. 
+ClickHouse/Elastic sont utilisés comme <strong>cache analytique</strong> pour améliorer les performances 
+des requêtes complexes, mais ne stockent pas de nouvelles entités métier.
+</p>
 
 </div>
 
